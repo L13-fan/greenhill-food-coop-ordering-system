@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>My Orders</h2>
+{% for o in orders %}
+    <h3>Order #{{ o.id }} - Round {{ o.round.number }}</h3>
+    <table>
+        <tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Line Total</th></tr>
+        {% for l in o.lines %}
+        <tr>
+            <td>{{ l.product.name }}</td>
+            <td>{{ l.quantity }}</td>
+            <td>${{ "%.2f"|format(l.unit_price) }}</td>
+            <td>${{ "%.2f"|format(l.line_total) }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p><strong>Total: ${{ "%.2f"|format(o.total()) }}</strong></p>
+{% endfor %}
+{% endblock %}

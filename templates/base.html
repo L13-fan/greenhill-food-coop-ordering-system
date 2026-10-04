@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Greenhill Food Co-op</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Greenhill Food Co-op</h1>
+        <nav>
+            <a href="{{ url_for('products') }}">Products</a>
+            <a href="{{ url_for('my_orders') }}">My Orders</a>
+            <a href="{{ url_for('admin_orders') }}">Admin</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </nav>
+    </header>
+    <main>
+        {% with messages = get_flashed_messages() %}
+            {% for m in messages %}<p class="flash">{{ m }}</p>{% endfor %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

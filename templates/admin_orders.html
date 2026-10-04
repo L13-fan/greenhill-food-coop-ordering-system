@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>All Orders (Coordinator View)</h2>
+{% for o in orders %}
+    <p>{{ o.member.member_no }} - {{ o.member.name }} - ${{ "%.2f"|format(o.total()) }}</p>
+{% endfor %}
+
+<h2>Round Total by Product</h2>
+<table>
+    <tr><th>Product</th><th>Total Quantity</th></tr>
+    {% set totals = {} %}
+    {% for o in orders %}
+        {% for l in o.lines %}
+            {% if l.product.name in totals %}
+                {% set _ = totals.update({l.product.name: totals[l.product.name] + l.quantity}) %}
+            {% else %}
+                {% set _ = totals.update({l.product.name: l.quantity}) %}
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+    {% for name, qty in totals.items() %}
+    <tr><td>{{ name }}</td><td>{{ qty }}</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

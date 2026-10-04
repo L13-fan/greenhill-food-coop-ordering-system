@@ -1,0 +1,6 @@
+body { font-family: Arial, sans-serif; margin: 2rem; }
+header { border-bottom: 2px solid #2e7d32; margin-bottom: 1rem; }
+nav a { margin-right: 1rem; color: #2e7d32; text-decoration: none; }
+table { border-collapse: collapse; margin: 1rem 0; }
+th, td { border: 1px solid #ccc; padding: 0.5rem 1rem; }
+.flash { color: darkred; }

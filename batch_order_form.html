@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Weekly Food Batch Pre‑order | Greenhill Food Co‑op</title>
+    <style>
+        .container {max-width:700px;margin:2rem auto;padding:0 1rem;}
+        .batch-item {border:1px solid #ccc;padding:12px;margin:8px 0;border-radius:6px;}
+        .confirm-message {color:#206c23;font-weight:bold;margin-top:15px;display:none;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Greenhill Food Co‑op — Weekly Food Batch Pre‑order</h2>
+    <p>Order cutoff date: 2026‑10‑12. Orders will be ready for weekly pickup.</p>
+
+    <h3>Available Weekly Food Batches</h3>
+    <div class="batch-item">
+        <strong>Organic Vegetable Box</strong><br>
+        Available stock: 22 units<br>
+        <label>Order quantity:
+            <input type="number" id="qty_veg" min="0" max="22" value="0">
+        </label>
+    </div>
+    <div class="batch-item">
+        <strong>Free‑range Egg Dozen</strong><br>
+        Available stock: 15 units<br>
+        <label>Order quantity:
+            <input type="number" id="qty_egg" min="0" max="15" value="0">
+        </label>
+    </div>
+    <div class="batch-item">
+        <strong>Seasonal Fruit Pack</strong><br>
+        Available stock: 10 units<br>
+        <label>Order quantity:
+            <input type="number" id="qty_fruit" min="0" max="10" value="0">
+        </label>
+    </div>
+
+    <br>
+    <button id="submitOrderBtn">Submit My Pre‑order</button>
+
+    <div class="confirm-message" id="orderConfirm">
+        Thank you for your order! Your order reference number: <span id="orderRef"></span>
+    </div>
+
+    <p style="margin-top:20px;">
+        <a href="index.html">Back to Home Page</a> |
+        <a href="product.html">View Product Catalogue</a>
+    </p>
+</div>
+
+<script>
+document.getElementById("submitOrderBtn").addEventListener("click", function(){
+    const qtyVeg = parseInt(document.getElementById("qty_veg").value);
+    const qtyEgg = parseInt(document.getElementById("qty_egg").value);
+    const qtyFruit = parseInt(document.getElementById("qty_fruit").value);
+
+    if(qtyVeg===0 && qtyEgg===0 && qtyFruit===0){
+        alert("Validation error: Please input at least one order quantity greater than zero.");
+        return;
+    }
+    const ref = "GH‑ORD‑" + Math.floor(Math.random()*90000+10000);
+    document.getElementById("orderRef").innerText = ref;
+    document.getElementById("orderConfirm").style.display = "block";
+})
+</script>
+</body>
+</html>

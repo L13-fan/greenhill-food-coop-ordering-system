@@ -118,6 +118,68 @@ def admin_orders():
     return render_template("admin_orders.html", orders=orders)
 
 
+@app.route("/admin/products")
+def admin_products():
+    products = Product.query.order_by(Product.name).all()
+    return render_template("admin_products.html", products=products)
+
+
+@app.route("/admin/products/new", methods=["GET", "POST"])
+def admin_product_new():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        if not name:
+            flash("Name is required.")
+            return redirect(url_for("admin_product_new"))
+        try:
+            price = float(request.form.get("price"))
+        except (TypeError, ValueError):
+            flash("Price must be a number.")
+            return redirect(url_for("admin_product_new"))
+        sale_type = request.form.get("sale_type", "unit")
+        if sale_type not in ("unit", "weight"):
+            sale_type = "unit"
+        p = Product(name=name, price=price, sale_type=sale_type,
+                    bay=request.form.get("bay", "").strip(), active=True)
+        db.session.add(p)
+        db.session.commit()
+        flash(f"Product '{name}' added.")
+        return redirect(url_for("admin_products"))
+    return render_template("product_form.html", product=None)
+
+
+@app.route("/admin/products/<int:product_id>/edit", methods=["GET", "POST"])
+def admin_product_edit(product_id):
+    p = db.session.get(Product, product_id)
+    if not p:
+        flash("Product not found.")
+        return redirect(url_for("admin_products"))
+    if request.method == "POST":
+        p.name = request.form.get("name", p.name).strip() or p.name
+        try:
+            p.price = float(request.form.get("price", p.price))
+        except (TypeError, ValueError):
+            flash("Price must be a number.")
+            return redirect(url_for("admin_product_edit", product_id=p.id))
+        st = request.form.get("sale_type")
+        if st in ("unit", "weight"):
+            p.sale_type = st
+        p.bay = request.form.get("bay", p.bay).strip()
+        db.session.commit()
+        flash(f"Product '{p.name}' updated.")
+        return redirect(url_for("admin_products"))
+    return render_template("product_form.html", product=p)
+
+
+@app.route("/admin/products/<int:product_id>/toggle", methods=["POST"])
+def admin_product_toggle(product_id):
+    p = db.session.get(Product, product_id)
+    if p:
+        p.active = not p.active
+        db.session.commit()
+        flash(f"Product '{p.name}' is now {'available' if p.active else 'withdrawn'}.")
+    return redirect(url_for("admin_products"))
+
 with app.app_context():
     db.create_all()
     seed_data()
@@ -125,3 +187,24 @@ with app.app_context():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+from flask import Flask, render_template
+from models import db, Product, Round
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///greenhill.db'
+db.init_app(app)
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/products')
+def product_list():
+    current_round = Round.query.filter_by(status='open').first()
+    products = Product.query.filter_by(active=True).all()
+    return render_template('products.html', products=products, round=current_round)
+
+@app.route('/dashboard')
+def coordinator_dashboard():
+    return render_template('dashboard.html')

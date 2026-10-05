@@ -6,6 +6,14 @@ A simple web application for managing weekly grocery orders for Greenhill Food C
 
 Greenhill Food Co-op is a volunteer-run community food co-operative. This system allows members to enter their own weekly orders, gives the coordinator a view of all orders and product totals, and provides a printable packing sheet for the Thursday packing shift.
 
+## Features
+
+- Member management and contact details
+- Product catalogue with unit and weight based pricing
+- Weekly round management (open/closed/packed states)
+- Order placement and tracking for members
+- Coordinator dashboard for viewing all orders
+
 ## Technology Stack
 
 - Python 3.11+

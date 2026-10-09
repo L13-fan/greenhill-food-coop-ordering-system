@@ -67,25 +67,3 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
-class Member(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    member_number = db.Column(db.String(20), unique=True, nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    phone = db.Column(db.String(20))
-    email = db.Column(db.String(100))
-    active = db.Column(db.Boolean, default=True)
-
-class Product(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    price = db.Column(db.Float, nullable=False)
-    sold_by = db.Column(db.String(20), nullable=False)  # "unit" or "weight"
-    active = db.Column(db.Boolean, default=True)
-
-
-class Round(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)  # e.g. "Round 34"
-    status = db.Column(db.String(20), default='open')  # open, closed, packed
-    order_deadline = db.Column(db.DateTime)
-    pickup_date = db.Column(db.DateTime)

@@ -126,23 +126,3 @@ with app.app_context():
 if __name__ == "__main__":
     app.run(debug=True)
 
-from flask import Flask, render_template
-from models import db, Product, Round
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///greenhill.db'
-db.init_app(app)
-
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-@app.route('/products')
-def product_list():
-    current_round = Round.query.filter_by(status='open').first()
-    products = Product.query.filter_by(active=True).all()
-    return render_template('products.html', products=products, round=current_round)
-
-@app.route('/dashboard')
-def coordinator_dashboard():
-    return render_template('dashboard.html')

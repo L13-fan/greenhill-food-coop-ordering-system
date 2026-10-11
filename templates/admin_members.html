@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head><title>Member Management</title></head>
+<body>
+    <h1>Member Management</h1>
+    <a href="{{ url_for('admin_member_new') }}">Add New Member</a>
+    <table border="1">
+        <tr>
+            <th>Member No</th><th>Name</th><th>Phone</th><th>Email</th><th>Status</th><th>Actions</th>
+        </tr>
+        {% for m in members %}
+        <tr>
+            <td>{{ m.member_no }}</td>
+            <td>{{ m.name }}</td>
+            <td>{{ m.phone }}</td>
+            <td>{{ m.email }}</td>
+            <td>{{ 'Active' if m.active else 'Inactive' }}</td>
+            <td>
+                <a href="{{ url_for('admin_member_edit', member_id=m.id) }}">Edit</a> | 
+                <form action="{{ url_for('admin_member_toggle', member_id=m.id) }}" method="POST" style="display:inline;">
+                    <button type="submit">{{ 'Deactivate' if m.active else 'Activate' }}</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

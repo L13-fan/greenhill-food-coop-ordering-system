@@ -62,8 +62,4 @@ class OrderLine(db.Model):
     def line_total(self):
         return round(self.quantity * self.unit_price, 2)
 
-from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
-
-db = SQLAlchemy()
 

@@ -123,6 +123,58 @@ def admin_products():
     products = Product.query.order_by(Product.name).all()
     return render_template("admin_products.html", products=products)
 
+@app.route("/admin/members")
+def admin_members():
+    members = Member.query.order_by(Member.member_no).all()
+    return render_template("admin_members.html", members=members)
+
+
+@app.route("/admin/members/new", methods=["GET", "POST"])
+def admin_member_new():
+    if request.method == "POST":
+        member_no = request.form.get("member_no", "").strip()
+        name = request.form.get("name", "").strip()
+        if not member_no or not name:
+            flash("Member number and name are required.")
+            return redirect(url_for("admin_member_new"))
+        if Member.query.filter_by(member_no=member_no).first():
+            flash("Member number already exists.")
+            return redirect(url_for("admin_member_new"))
+        m = Member(member_no=member_no, name=name,
+                   phone=request.form.get("phone", "").strip(),
+                   email=request.form.get("email", "").strip(), active=True)
+        db.session.add(m)
+        db.session.commit()
+        flash(f"Member '{name}' added.")
+        return redirect(url_for("admin_members"))
+    return render_template("member_form.html", member=None)
+
+
+@app.route("/admin/members/<int:member_id>/edit", methods=["GET", "POST"])
+def admin_member_edit(member_id):
+    m = db.session.get(Member, member_id)
+    if not m:
+        flash("Member not found.")
+        return redirect(url_for("admin_members"))
+    if request.method == "POST":
+        m.name = request.form.get("name", m.name).strip() or m.name
+        m.phone = request.form.get("phone", m.phone).strip()
+        m.email = request.form.get("email", m.email).strip()
+        db.session.commit()
+        flash(f"Member '{m.name}' updated.")
+        return redirect(url_for("admin_members"))
+    return render_template("member_form.html", member=m)
+
+
+@app.route("/admin/members/<int:member_id>/toggle", methods=["POST"])
+def admin_member_toggle(member_id):
+    m = db.session.get(Member, member_id)
+    if m:
+        m.active = not m.active
+        db.session.commit()
+        flash(f"Member '{m.name}' is now {'active' if m.active else 'deactivated'}.")
+    return redirect(url_for("admin_members"))
+
 
 @app.route("/admin/products/new", methods=["GET", "POST"])
 def admin_product_new():
@@ -180,11 +232,9 @@ def admin_product_toggle(product_id):
         flash(f"Product '{p.name}' is now {'available' if p.active else 'withdrawn'}.")
     return redirect(url_for("admin_products"))
 
-with app.app_context():
-    db.create_all()
-    seed_data()
-
-
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+        seed_data()
     app.run(debug=True)
 

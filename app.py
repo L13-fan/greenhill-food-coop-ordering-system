@@ -232,6 +232,45 @@ def admin_product_toggle(product_id):
         flash(f"Product '{p.name}' is now {'available' if p.active else 'withdrawn'}.")
     return redirect(url_for("admin_products"))
 
+@app.route("/admin/rounds")
+def admin_rounds():
+    rounds = Round.query.order_by(Round.number.desc()).all()
+    return render_template("admin_rounds.html", rounds=rounds)
+
+
+@app.route("/admin/rounds/new", methods=["GET", "POST"])
+def admin_round_new():
+    if request.method == "POST":
+        try:
+            number = int(request.form.get("number"))
+        except (TypeError, ValueError):
+            flash("Round number must be a number.")
+            return redirect(url_for("admin_round_new"))
+        
+        r = Round(number=number, status="open")
+        db.session.add(r)
+        db.session.commit()
+        flash(f"Round {number} created and open for orders.")
+        return redirect(url_for("admin_rounds"))
+    return render_template("round_form.html")
+
+
+@app.route("/admin/rounds/<int:round_id>/status/<string:new_status>", methods=["POST"])
+def admin_round_change_status(round_id, new_status):
+    r = db.session.get(Round, round_id)
+    if not r:
+        flash("Round not found.")
+        return redirect(url_for("admin_rounds"))
+    
+    if new_status not in ("open", "closed", "packed"):
+        flash("Invalid round status.")
+        return redirect(url_for("admin_rounds"))
+    
+    r.status = new_status
+    db.session.commit()
+    flash(f"Round {r.number} status changed to {new_status}.")
+    return redirect(url_for("admin_rounds"))
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()

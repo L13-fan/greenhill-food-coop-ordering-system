@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head><title>Create New Round</title></head>
+<body>
+    <h1>Create New Round</h1>
+    <form method="POST">
+        Round Number: <input type="number" name="number" required><br>
+        <button type="submit">Create Round</button>
+    </form>
+    <br>
+    <a href="{{ url_for('admin_rounds') }}">Back to Round Management</a>
+</body>
+</html>

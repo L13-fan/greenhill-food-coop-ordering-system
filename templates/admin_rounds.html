@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head><title>Round Management</title></head>
+<body>
+    <h1>Round Management</h1>
+    <a href="{{ url_for('admin_round_new') }}">Create New Round</a>
+    <table border="1">
+        <tr><th>Round Number</th><th>Status</th><th>Actions</th></tr>
+        {% for r in rounds %}
+        <tr>
+            <td>{{ r.number }}</td>
+            <td>{{ r.status }}</td>
+            <td>
+                <form action="{{ url_for('admin_round_change_status', round_id=r.id, new_status='open') }}" method="POST" style="display:inline;">
+                    <button type="submit" {% if r.status == 'open' %}disabled{% endif %}>Open</button>
+                </form>
+                <form action="{{ url_for('admin_round_change_status', round_id=r.id, new_status='closed') }}" method="POST" style="display:inline;">
+                    <button type="submit" {% if r.status == 'closed' %}disabled{% endif %}>Close</button>
+                </form>
+                <form action="{{ url_for('admin_round_change_status', round_id=r.id, new_status='packed') }}" method="POST" style="display:inline;">
+                    <button type="submit" {% if r.status == 'packed' %}disabled{% endif %}>Mark as Packed</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <a href="{{ url_for('admin_orders') }}">Back to Admin Orders</a>
+</body>
+</html>

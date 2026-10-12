@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head><title>Round Totals</title></head>
+<body>
+    <h1>Round {{ round.number }} – Totals by Product</h1>
+    <table border="1">
+        <tr><th>Product</th><th>Selling Method</th><th>Total Quantity</th></tr>
+        {% for name, data in totals.items() %}
+        <tr>
+            <td>{{ name }}</td>
+            <td>{{ data.sale_type }}</td>
+            <td>
+                {% if data.sale_type == 'unit' %}
+                    {{ data.unit }} items
+                {% else %}
+                    {{ "%.2f"|format(data.kg) }} kg
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3">No products ordered in this round.</td></tr>
+        {% endfor %}
+    </table>
+    <br>
+    <a href="{{ url_for('admin_round_orders', round_id=round.id) }}">View Individual Orders</a>
+    <br><br>
+    <a href="{{ url_for('admin_orders') }}">Back to All Orders</a>
+</body>
+</html>

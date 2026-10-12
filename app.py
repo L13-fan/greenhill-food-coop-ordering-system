@@ -341,6 +341,43 @@ def cancel_order(order_id):
     flash("Order cancelled successfully.")
     return redirect(url_for("my_orders"))
 
+@app.route("/admin/rounds/<int:round_id>/orders")
+def admin_round_orders(round_id):
+    round_obj = db.session.get(Round, round_id)
+    if not round_obj:
+        flash("Round not found.")
+        return redirect(url_for("admin_orders"))
+    orders = Order.query.filter_by(round_id=round_id).all()
+    return render_template("admin_round_orders.html", round=round_obj, orders=orders)
+
+
+@app.route("/admin/rounds/<int:round_id>/totals")
+def admin_round_totals(round_id):
+    round_obj = db.session.get(Round, round_id)
+    if not round_obj:
+        flash("Round not found.")
+        return redirect(url_for("admin_orders"))
+    
+    # 汇总逻辑：按产品名字分组，分别统计按件和按公斤的订购量
+    totals = {}
+    for order in round_obj.orders:
+        for line in order.lines:
+            product = line.product
+            if product.name not in totals:
+                totals[product.name] = {
+                    'unit': 0, 
+                    'kg': 0.0, 
+                    'sale_type': product.sale_type
+                }
+            if product.sale_type == 'unit':
+                totals[product.name]['unit'] += int(line.quantity)
+            else:
+                # 如果没有实际打包重量，默认使用订购量
+                qty = line.quantity
+                totals[product.name]['kg'] += qty
+    
+    return render_template("round_totals.html", round=round_obj, totals=totals)
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()

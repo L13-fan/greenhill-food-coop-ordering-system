@@ -114,9 +114,16 @@ def my_orders():
 
 @app.route("/admin/orders")
 def admin_orders():
+    # 检查当前登录的成员是不是协调员（这里假设协调员的 member_id 是 1）
+    # 如果你希望简单点，可以先检查是否存在 member_id，如果是普通成员就拦截
+    if "member_id" in session:
+        # 假设只有 ID 为 1 的是协调员，其他人访问就拦截
+        if session["member_id"] != 1:
+            flash("Access denied. Members cannot view all orders.")
+            return redirect(url_for("my_orders"))
+    
     orders = Order.query.all()
     return render_template("admin_orders.html", orders=orders)
-
 
 @app.route("/admin/products")
 def admin_products():

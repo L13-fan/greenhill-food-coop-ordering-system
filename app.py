@@ -271,6 +271,69 @@ def admin_round_change_status(round_id, new_status):
     flash(f"Round {r.number} status changed to {new_status}.")
     return redirect(url_for("admin_rounds"))
 
+@app.route("/order/edit/<int:order_id>", methods=["GET", "POST"])
+def edit_order(order_id):
+    if "member_id" not in session:
+        return redirect(url_for("login"))
+    order = db.session.get(Order, order_id)
+    if not order or order.member_id != session["member_id"]:
+        flash("Order not found or access denied.")
+        return redirect(url_for("my_orders"))
+    
+    round_obj = db.session.get(Round, order.round_id)
+    if round_obj.status != "open":
+        flash("You can only edit an order while the round is open.")
+        return redirect(url_for("my_orders"))
+
+    if request.method == "POST":
+        # 先清空所有现有行（简单粗暴但有效），然后重新加
+        OrderLine.query.filter_by(order_id=order.id).delete()
+        
+        for product in Product.query.filter_by(active=True).all():
+            qty_str = request.form.get(f"qty_{product.id}")
+            if not qty_str:
+                continue
+            try:
+                qty = float(qty_str)
+            except ValueError:
+                continue
+            if qty <= 0:
+                continue
+            if product.sale_type == "unit" and qty != int(qty):
+                flash(f"{product.name} must be a whole number.")
+                continue
+            line = OrderLine(order_id=order.id, product_id=product.id, quantity=qty, unit_price=product.price)
+            db.session.add(line)
+        db.session.commit()
+        flash("Order updated successfully.")
+        return redirect(url_for("my_orders"))
+
+    # GET：显示编辑页面
+    products = Product.query.filter_by(active=True).all()
+    # 构建当前订单的字典：{product_id: quantity}
+    order_lines = {line.product_id: line.quantity for line in order.lines}
+    return render_template("edit_order.html", order=order, products=products, order_lines=order_lines)
+
+
+@app.route("/order/cancel/<int:order_id>", methods=["POST"])
+def cancel_order(order_id):
+    if "member_id" not in session:
+        return redirect(url_for("login"))
+    order = db.session.get(Order, order_id)
+    if not order or order.member_id != session["member_id"]:
+        flash("Order not found or access denied.")
+        return redirect(url_for("my_orders"))
+    
+    round_obj = db.session.get(Round, order.round_id)
+    if round_obj.status != "open":
+        flash("You can only cancel an order while the round is open.")
+        return redirect(url_for("my_orders"))
+
+    db.session.delete(order) # 级联删除会自动删掉 OrderLine
+    db.session.commit()
+    flash("Order cancelled successfully.")
+    return redirect(url_for("my_orders"))
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()

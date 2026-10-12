@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head><title>Round Orders</title></head>
+<body>
+    <h1>Round {{ round.number }} – All Orders</h1>
+    <table border="1">
+        <tr><th>Order ID</th><th>Member</th><th>Total Items</th></tr>
+        {% for order in orders %}
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.member.name }} ({{ order.member.member_no }})</td>
+            <td>{{ order.lines|length }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3">No orders in this round.</td></tr>
+        {% endfor %}
+    </table>
+    <br>
+    <a href="{{ url_for('admin_round_totals', round_id=round.id) }}">View Totals by Product</a>
+    <br><br>
+    <a href="{{ url_for('admin_orders') }}">Back to All Orders</a>
+</body>
+</html>

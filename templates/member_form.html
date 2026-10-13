@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><title>{{ 'Add' if not member else 'Edit' }} Member</title></head>
+<body>
+    <h1>{{ 'Add' if not member else 'Edit' }} Member</h1>
+    <form method="POST">
+        {% if member %}
+            Member No: {{ member.member_no }} (Cannot be changed)<br>
+        {% else %}
+            Member No: <input type="text" name="member_no" required><br>
+        {% endif %}
+        Name: <input type="text" name="name" value="{{ member.name if member else '' }}" required><br>
+        Phone: <input type="text" name="phone" value="{{ member.phone if member else '' }}"><br>
+        Email: <input type="email" name="email" value="{{ member.email if member else '' }}"><br>
+        <button type="submit">Save</button>
+    </form>
+    <br>
+    <a href="{{ url_for('admin_members') }}">Back to List</a>
+</body>
+</html>

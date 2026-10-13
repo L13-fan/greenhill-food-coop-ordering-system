@@ -114,14 +114,95 @@ def my_orders():
 
 @app.route("/admin/orders")
 def admin_orders():
-    orders = Order.query.all()
-    return render_template("admin_orders.html", orders=orders)
+    if "member_id" not in session:
+        return redirect(url_for("login"))
+    if session["member_id"] != 1:
+        flash("Access denied. Members cannot view all orders.")
+        return redirect(url_for("my_orders"))
 
+    # 1. 获取所有轮次供下拉菜单使用
+    rounds = Round.query.order_by(Round.number.desc()).all()
+    
+    # 2. 获取用户选择的轮次（如果有）
+    selected_round_id = request.args.get("round_id", type=int)
+    
+    if selected_round_id:
+        orders = Order.query.filter_by(round_id=selected_round_id).all()
+        selected_round = db.session.get(Round, selected_round_id)
+    else:
+        orders = Order.query.all()
+        selected_round = None
+        
+    # 3. 根据当前显示的订单，实时计算汇总
+    totals = {}
+    for order in orders:
+        for line in order.lines:
+            product = line.product
+            if product.name not in totals:
+                totals[product.name] = {'unit': 0, 'kg': 0.0, 'sale_type': product.sale_type}
+            if product.sale_type == 'unit':
+                totals[product.name]['unit'] += int(line.quantity)
+            else:
+                totals[product.name]['kg'] += line.quantity
+
+    return render_template("admin_orders.html", orders=orders, rounds=rounds, selected_round=selected_round, totals=totals)
 
 @app.route("/admin/products")
 def admin_products():
     products = Product.query.order_by(Product.name).all()
     return render_template("admin_products.html", products=products)
+
+@app.route("/admin/members")
+def admin_members():
+    members = Member.query.order_by(Member.member_no).all()
+    return render_template("admin_members.html", members=members)
+
+
+@app.route("/admin/members/new", methods=["GET", "POST"])
+def admin_member_new():
+    if request.method == "POST":
+        member_no = request.form.get("member_no", "").strip()
+        name = request.form.get("name", "").strip()
+        if not member_no or not name:
+            flash("Member number and name are required.")
+            return redirect(url_for("admin_member_new"))
+        if Member.query.filter_by(member_no=member_no).first():
+            flash("Member number already exists.")
+            return redirect(url_for("admin_member_new"))
+        m = Member(member_no=member_no, name=name,
+                   phone=request.form.get("phone", "").strip(),
+                   email=request.form.get("email", "").strip(), active=True)
+        db.session.add(m)
+        db.session.commit()
+        flash(f"Member '{name}' added.")
+        return redirect(url_for("admin_members"))
+    return render_template("member_form.html", member=None)
+
+
+@app.route("/admin/members/<int:member_id>/edit", methods=["GET", "POST"])
+def admin_member_edit(member_id):
+    m = db.session.get(Member, member_id)
+    if not m:
+        flash("Member not found.")
+        return redirect(url_for("admin_members"))
+    if request.method == "POST":
+        m.name = request.form.get("name", m.name).strip() or m.name
+        m.phone = request.form.get("phone", m.phone).strip()
+        m.email = request.form.get("email", m.email).strip()
+        db.session.commit()
+        flash(f"Member '{m.name}' updated.")
+        return redirect(url_for("admin_members"))
+    return render_template("member_form.html", member=m)
+
+
+@app.route("/admin/members/<int:member_id>/toggle", methods=["POST"])
+def admin_member_toggle(member_id):
+    m = db.session.get(Member, member_id)
+    if m:
+        m.active = not m.active
+        db.session.commit()
+        flash(f"Member '{m.name}' is now {'active' if m.active else 'deactivated'}.")
+    return redirect(url_for("admin_members"))
 
 
 @app.route("/admin/products/new", methods=["GET", "POST"])
@@ -180,31 +261,148 @@ def admin_product_toggle(product_id):
         flash(f"Product '{p.name}' is now {'available' if p.active else 'withdrawn'}.")
     return redirect(url_for("admin_products"))
 
-with app.app_context():
-    db.create_all()
-    seed_data()
+@app.route("/admin/rounds")
+def admin_rounds():
+    rounds = Round.query.order_by(Round.number.desc()).all()
+    return render_template("admin_rounds.html", rounds=rounds)
 
+
+@app.route("/admin/rounds/new", methods=["GET", "POST"])
+def admin_round_new():
+    if request.method == "POST":
+        try:
+            number = int(request.form.get("number"))
+        except (TypeError, ValueError):
+            flash("Round number must be a number.")
+            return redirect(url_for("admin_round_new"))
+        
+        r = Round(number=number, status="open")
+        db.session.add(r)
+        db.session.commit()
+        flash(f"Round {number} created and open for orders.")
+        return redirect(url_for("admin_rounds"))
+    return render_template("round_form.html")
+
+
+@app.route("/admin/rounds/<int:round_id>/status/<string:new_status>", methods=["POST"])
+def admin_round_change_status(round_id, new_status):
+    r = db.session.get(Round, round_id)
+    if not r:
+        flash("Round not found.")
+        return redirect(url_for("admin_rounds"))
+    
+    if new_status not in ("open", "closed", "packed"):
+        flash("Invalid round status.")
+        return redirect(url_for("admin_rounds"))
+    
+    r.status = new_status
+    db.session.commit()
+    flash(f"Round {r.number} status changed to {new_status}.")
+    return redirect(url_for("admin_rounds"))
+
+@app.route("/order/edit/<int:order_id>", methods=["GET", "POST"])
+def edit_order(order_id):
+    if "member_id" not in session:
+        return redirect(url_for("login"))
+    order = db.session.get(Order, order_id)
+    if not order or order.member_id != session["member_id"]:
+        flash("Order not found or access denied.")
+        return redirect(url_for("my_orders"))
+    
+    round_obj = db.session.get(Round, order.round_id)
+    if round_obj.status != "open":
+        flash("You can only edit an order while the round is open.")
+        return redirect(url_for("my_orders"))
+
+    if request.method == "POST":
+        # 先清空所有现有行（简单粗暴但有效），然后重新加
+        OrderLine.query.filter_by(order_id=order.id).delete()
+        
+        for product in Product.query.filter_by(active=True).all():
+            qty_str = request.form.get(f"qty_{product.id}")
+            if not qty_str:
+                continue
+            try:
+                qty = float(qty_str)
+            except ValueError:
+                continue
+            if qty <= 0:
+                continue
+            if product.sale_type == "unit" and qty != int(qty):
+                flash(f"{product.name} must be a whole number.")
+                continue
+            line = OrderLine(order_id=order.id, product_id=product.id, quantity=qty, unit_price=product.price)
+            db.session.add(line)
+        db.session.commit()
+        flash("Order updated successfully.")
+        return redirect(url_for("my_orders"))
+
+    # GET：显示编辑页面
+    products = Product.query.filter_by(active=True).all()
+    # 构建当前订单的字典：{product_id: quantity}
+    order_lines = {line.product_id: line.quantity for line in order.lines}
+    return render_template("edit_order.html", order=order, products=products, order_lines=order_lines)
+
+
+@app.route("/order/cancel/<int:order_id>", methods=["POST"])
+def cancel_order(order_id):
+    if "member_id" not in session:
+        return redirect(url_for("login"))
+    order = db.session.get(Order, order_id)
+    if not order or order.member_id != session["member_id"]:
+        flash("Order not found or access denied.")
+        return redirect(url_for("my_orders"))
+    
+    round_obj = db.session.get(Round, order.round_id)
+    if round_obj.status != "open":
+        flash("You can only cancel an order while the round is open.")
+        return redirect(url_for("my_orders"))
+
+    db.session.delete(order) # 级联删除会自动删掉 OrderLine
+    db.session.commit()
+    flash("Order cancelled successfully.")
+    return redirect(url_for("my_orders"))
+
+@app.route("/admin/rounds/<int:round_id>/orders")
+def admin_round_orders(round_id):
+    round_obj = db.session.get(Round, round_id)
+    if not round_obj:
+        flash("Round not found.")
+        return redirect(url_for("admin_orders"))
+    orders = Order.query.filter_by(round_id=round_id).all()
+    return render_template("admin_round_orders.html", round=round_obj, orders=orders)
+
+
+@app.route("/admin/rounds/<int:round_id>/totals")
+def admin_round_totals(round_id):
+    round_obj = db.session.get(Round, round_id)
+    if not round_obj:
+        flash("Round not found.")
+        return redirect(url_for("admin_orders"))
+    
+    # 汇总逻辑：按产品名字分组，分别统计按件和按公斤的订购量
+    totals = {}
+    for order in round_obj.orders:
+        for line in order.lines:
+            product = line.product
+            if product.name not in totals:
+                totals[product.name] = {
+                    'unit': 0, 
+                    'kg': 0.0, 
+                    'sale_type': product.sale_type
+                }
+            if product.sale_type == 'unit':
+                totals[product.name]['unit'] += int(line.quantity)
+            else:
+                # 如果没有实际打包重量，默认使用订购量
+                qty = line.quantity
+                totals[product.name]['kg'] += qty
+    
+    return render_template("round_totals.html", round=round_obj, totals=totals)
 
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+        seed_data()
     app.run(debug=True)
 
-from flask import Flask, render_template
-from models import db, Product, Round
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///greenhill.db'
-db.init_app(app)
-
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-@app.route('/products')
-def product_list():
-    current_round = Round.query.filter_by(status='open').first()
-    products = Product.query.filter_by(active=True).all()
-    return render_template('products.html', products=products, round=current_round)
-
-@app.route('/dashboard')
-def coordinator_dashboard():
-    return render_template('dashboard.html')

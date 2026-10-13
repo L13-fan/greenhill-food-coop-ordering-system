@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Round Management</h2>
+<a href="{{ url_for('admin_round_new') }}">Create New Round</a>
+<br><br>
+<table border="1">
+    <tr><th>Round Number</th><th>Status</th><th>Actions</th></tr>
+    {% for r in rounds %}
+    <tr>
+        <td>Round {{ r.number }}</td>
+        <td>{{ r.status }}</td>
+        <td>
+            {% if r.status == 'open' %}
+                <form action="{{ url_for('admin_round_change_status', round_id=r.id, new_status='closed') }}" method="POST" style="display:inline;"><button type="submit">Close</button></form>
+            {% elif r.status == 'closed' %}
+                <form action="{{ url_for('admin_round_change_status', round_id=r.id, new_status='packed') }}" method="POST" style="display:inline;"><button type="submit">Mark as Packed</button></form>
+            {% endif %}
+            <a href="{{ url_for('admin_round_orders', round_id=r.id) }}">View Orders</a> |
+            <a href="{{ url_for('admin_round_totals', round_id=r.id) }}">View Totals</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

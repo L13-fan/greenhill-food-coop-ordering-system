@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Create New Round</h2>
+<form method="POST">
+    <p>
+        <label>Round Number:</label><br>
+        <input type="number" name="number" required>
+    </p>
+    <button type="submit" style="padding: 8px 15px; background-color: #4CAF50; color: white; border: none; border-radius: 4px;">Create Round</button>
+</form>
+{% endblock %}

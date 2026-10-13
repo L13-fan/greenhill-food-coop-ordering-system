@@ -3,18 +3,20 @@
 <h2>My Orders</h2>
 {% for o in orders %}
     <h3>Order #{{ o.id }} - Round {{ o.round.number }}</h3>
+    
+    <!-- 状态显示：放到了表格外面 -->
+    <div style="margin-bottom: 10px;">
+        <strong>Status: </strong>
+        {% if o.round.status == 'open' %}
+            <span style="color: green;">Open (You can still edit or cancel)</span>
+        {% elif o.round.status == 'closed' %}
+            <span style="color: orange;">Closed (Pending packing)</span>
+        {% elif o.round.status == 'packed' %}
+            <span style="color: blue;">Packed (Ready for pickup)</span>
+        {% endif %}
+    </div>
+
     <table>
-        <!-- 在 my_orders.html 中，循环体内部加上状态显示 -->
-        <div style="margin-bottom: 10px;">
-            <strong>Status: </strong>
-            {% if o.round.status == 'open' %}
-                <span style="color: green;">Open (You can still edit or cancel)</span>
-    {       % elif o.round.status == 'closed' %}
-                <span style="color: orange;">Closed (Pending packing)</span>
-            {% elif o.round.status == 'packed' %}
-                <span style="color: blue;">Packed (Ready for pickup)</span>
-            {% endif %}
-        </div>
         <tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Line Total</th></tr>
         {% for l in o.lines %}
         <tr>

@@ -73,9 +73,10 @@ python init_db.py
 6. Run the application:
 
 ```bash
-flask run
+python app.py
 The application will be available at http://127.0.0.1:5000/.
 ```
+> **Note:** Use `python app.py` instead of `flask run` to automatically initialize the database and seed data.
 
 ## Running Tests
 

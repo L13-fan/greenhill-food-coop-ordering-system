@@ -1,24 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Greenhill Food Co-op</title>
+    <!-- 加载静态样式表 -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <header>
         <h1>Greenhill Food Co-op</h1>
         <nav>
-            <a href="{{ url_for('products') }}">Products</a>
-            <a href="{{ url_for('my_orders') }}">My Orders</a>
-            <a href="{{ url_for('admin_orders') }}">Admin</a>
+            <!-- 导航栏：去掉容易混淆的单项链接，只保留 Admin 作为一个入口 -->
+            <a href="{{ url_for('products') }}">Products</a> |
+            <a href="{{ url_for('my_orders') }}">My Orders</a> |
+            <a href="{{ url_for('admin_orders') }}">Admin</a> |
             <a href="{{ url_for('logout') }}">Logout</a>
         </nav>
+        <hr>
     </header>
+
     <main>
+        <!-- 显示 Flash 消息（例如登录失败、操作成功等提示） -->
         {% with messages = get_flashed_messages() %}
-            {% for m in messages %}<p class="flash">{{ m }}</p>{% endfor %}
+            {% if messages %}
+                <div class="flashes" style="color: red; margin-bottom: 15px;">
+                {% for message in messages %}
+                    {{ message }}<br>
+                {% endfor %}
+                </div>
+            {% endif %}
         {% endwith %}
+
+        <!-- 这里是各个子页面（如 my_orders.html）具体内容注入的地方 -->
         {% block content %}{% endblock %}
     </main>
 </body>

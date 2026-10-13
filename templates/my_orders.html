@@ -4,6 +4,17 @@
 {% for o in orders %}
     <h3>Order #{{ o.id }} - Round {{ o.round.number }}</h3>
     <table>
+        <!-- 在 my_orders.html 中，循环体内部加上状态显示 -->
+        <div style="margin-bottom: 10px;">
+            <strong>Status: </strong>
+            {% if o.round.status == 'open' %}
+                <span style="color: green;">Open (You can still edit or cancel)</span>
+    {       % elif o.round.status == 'closed' %}
+                <span style="color: orange;">Closed (Pending packing)</span>
+            {% elif o.round.status == 'packed' %}
+                <span style="color: blue;">Packed (Ready for pickup)</span>
+            {% endif %}
+        </div>
         <tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Line Total</th></tr>
         {% for l in o.lines %}
         <tr>
@@ -15,5 +26,18 @@
         {% endfor %}
     </table>
     <p><strong>Total: ${{ "%.2f"|format(o.total()) }}</strong></p>
+    
+    <div style="margin-top: 15px;">
+        <!-- 只有轮次状态是 open 时，才显示修改和取消按钮 -->
+        {% if o.round.status == 'open' %}
+            <a href="{{ url_for('edit_order', order_id=o.id) }}" style="padding: 8px 15px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px; margin-right: 10px;">Edit Order</a>
+            
+            <form action="{{ url_for('cancel_order', order_id=o.id) }}" method="POST" style="display:inline;">
+                <button type="submit" style="padding: 8px 15px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="return confirm('Are you sure you want to cancel this order?');">Cancel Order</button>
+            </form>
+        {% else %}
+            <p style="color: gray;">This round is closed. Orders can no longer be edited or cancelled.</p>
+        {% endif %}
+    </div>
 {% endfor %}
 {% endblock %}

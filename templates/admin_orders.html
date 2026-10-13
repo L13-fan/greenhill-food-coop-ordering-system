@@ -1,25 +1,54 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>All Orders (Coordinator View)</h2>
-{% for o in orders %}
-    <p>{{ o.member.member_no }} - {{ o.member.name }} - ${{ "%.2f"|format(o.total()) }}</p>
-{% endfor %}
 
-<h2>Round Total by Product</h2>
-<table>
-    <tr><th>Product</th><th>Total Quantity</th></tr>
-    {% set totals = {} %}
-    {% for o in orders %}
-        {% for l in o.lines %}
-            {% if l.product.name in totals %}
-                {% set _ = totals.update({l.product.name: totals[l.product.name] + l.quantity}) %}
-            {% else %}
-                {% set _ = totals.update({l.product.name: l.quantity}) %}
-            {% endif %}
+<!-- 管理功能的入口按钮 -->
+<div style="margin-bottom: 20px;">
+    <a href="{{ url_for('admin_products') }}" style="padding: 8px 15px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 4px; margin-right: 10px;">Manage Products</a>
+    <a href="{{ url_for('admin_rounds') }}" style="padding: 8px 15px; background-color: #FF9800; color: white; text-decoration: none; border-radius: 4px;">Manage Rounds</a>
+</div>
+
+<!-- 轮次筛选下拉框 -->
+<form method="GET" action="{{ url_for('admin_orders') }}" style="margin-bottom: 20px;">
+    <label for="round_id"><strong>View by Round:</strong></label>
+    <select name="round_id" id="round_id" onchange="this.form.submit()" style="padding: 5px; font-size: 16px;">
+        <option value="">All Rounds (Total Orders)</option>
+        {% for r in rounds %}
+            <option value="{{ r.id }}" {% if selected_round and selected_round.id == r.id %}selected{% endif %}>
+                Round {{ r.number }} ({{ r.status }})
+            </option>
         {% endfor %}
+    </select>
+</form>
+
+<!-- 订单列表 -->
+<h3>{% if selected_round %}Round {{ selected_round.number }} Orders{% else %}All Orders{% endif %}</h3>
+<ul>
+    {% for order in orders %}
+        <li>{{ order.member.member_no }} - {{ order.member.name }} - ${{ "%.2f"|format(order.total()) }}</li>
+    {% else %}
+        <li>No orders found.</li>
     {% endfor %}
-    {% for name, qty in totals.items() %}
-    <tr><td>{{ name }}</td><td>{{ qty }}</td></tr>
+</ul>
+
+<!-- 产品汇总 -->
+<h3>Round Total by Product</h3>
+<table border="1">
+    <tr><th>Product</th><th>Total Quantity</th></tr>
+    {% for name, data in totals.items() %}
+    <tr>
+        <td>{{ name }}</td>
+        <td>
+            {% if data.sale_type == 'unit' %}
+                {{ data.unit }} items
+            {% else %}
+                {{ "%.2f"|format(data.kg) }} kg
+            {% endif %}
+        </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="2">No products ordered yet.</td></tr>
     {% endfor %}
 </table>
+
 {% endblock %}

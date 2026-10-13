@@ -114,16 +114,38 @@ def my_orders():
 
 @app.route("/admin/orders")
 def admin_orders():
-    # 检查当前登录的成员是不是协调员（这里假设协调员的 member_id 是 1）
-    # 如果你希望简单点，可以先检查是否存在 member_id，如果是普通成员就拦截
-    if "member_id" in session:
-        # 假设只有 ID 为 1 的是协调员，其他人访问就拦截
-        if session["member_id"] != 1:
-            flash("Access denied. Members cannot view all orders.")
-            return redirect(url_for("my_orders"))
+    if "member_id" not in session:
+        return redirect(url_for("login"))
+    if session["member_id"] != 1:
+        flash("Access denied. Members cannot view all orders.")
+        return redirect(url_for("my_orders"))
+
+    # 1. 获取所有轮次供下拉菜单使用
+    rounds = Round.query.order_by(Round.number.desc()).all()
     
-    orders = Order.query.all()
-    return render_template("admin_orders.html", orders=orders)
+    # 2. 获取用户选择的轮次（如果有）
+    selected_round_id = request.args.get("round_id", type=int)
+    
+    if selected_round_id:
+        orders = Order.query.filter_by(round_id=selected_round_id).all()
+        selected_round = db.session.get(Round, selected_round_id)
+    else:
+        orders = Order.query.all()
+        selected_round = None
+        
+    # 3. 根据当前显示的订单，实时计算汇总
+    totals = {}
+    for order in orders:
+        for line in order.lines:
+            product = line.product
+            if product.name not in totals:
+                totals[product.name] = {'unit': 0, 'kg': 0.0, 'sale_type': product.sale_type}
+            if product.sale_type == 'unit':
+                totals[product.name]['unit'] += int(line.quantity)
+            else:
+                totals[product.name]['kg'] += line.quantity
+
+    return render_template("admin_orders.html", orders=orders, rounds=rounds, selected_round=selected_round, totals=totals)
 
 @app.route("/admin/products")
 def admin_products():
